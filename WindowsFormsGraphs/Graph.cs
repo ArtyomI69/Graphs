@@ -21,7 +21,7 @@ namespace WindowsFormsGraphs {
         // Поля
         public Dictionary<string, Vertex> Vertices = new Dictionary<string, Vertex>();
         public int[,] AdjMatrix => GetAdjMatrix();
-        public int N => AdjMatrix.GetLength(0);
+        public int N => Vertices.Count;
         #endregion
 
         #region Статические поля и конструкторы
@@ -64,6 +64,7 @@ namespace WindowsFormsGraphs {
         // Добавление вершины в графе
         public void AddVertex(string name) {
             try {
+                if (name == "") return;
                 Vertex newVertex = new Vertex(name);
                 Vertices.Add(name, newVertex);
             } catch {
@@ -173,7 +174,7 @@ namespace WindowsFormsGraphs {
         }
         #endregion 
 
-        #region Публичные DFS и BFS
+        #region DFS и BFS
         // Поиск в глубину в графе от какой либо вершины
         public string DFS(string name, CancellationToken ct = new CancellationToken()) {
             try {
@@ -227,68 +228,7 @@ namespace WindowsFormsGraphs {
                 throw new Exception("Данной вершины не существует");
             }
         }
-        #endregion
 
-        // Алгоритм Краскала
-        public Graph Kruskal() {
-            List<(int edgeVal, string name1, string name2)> edges = _GetEdgesArr(); // список рёбер острова
-
-            Comparison<(int edgeVal, string name1, string name2)> comparison = (edge1, edge2) => edge1.edgeVal.CompareTo(edge2.edgeVal);
-            edges.Sort(comparison);
-            HashSet<string> U = new HashSet<string>(); // список СОЕДИНЁННЫХ вершин
-            Dictionary<string, List<string>> D = new Dictionary<string, List<string>>(); // словарь списка изолированных групп вершин
-            List<(int edgeVal, string name1, string name2)> T = new List<(int edgeVal, string name1, string name2)>(); // список рёбер острова
-
-            // проходим по рёбрам и соеденяем ИЗОЛИРОВАННЫЕ вершины
-            foreach ((int edgeVal, string name1, string name2) in edges) {
-                if (!U.Contains(name1) || !U.Contains(name2)) {
-                    if (!U.Contains(name1) && !U.Contains(name2)) {
-                        D[name1] = new List<string>() { name1, name2 };
-                        D[name2] = D[name1];
-                    } else {
-                        if (!D.ContainsKey(name1)) {
-                            D[name2].Add(name1);
-                            D[name1] = D[name2];
-                        } else {
-                            D[name1].Add(name2);
-                            D[name2] = D[name1];
-                        }
-                    }
-
-                    T.Add((edgeVal, name1, name2));
-                    U.Add(name1);
-                    U.Add(name2);
-                }
-            }
-
-            // проходим по рёбрам второй раз и объеденяем разрозненные группы вершин
-            foreach ((int edgeVal, string name1, string name2) in edges) {
-                if (!D[name1].Contains(name2)) {
-                    T.Add((edgeVal, name1, name2));
-                    List<string> tmp = new List<string>(D[name1]);
-                    D[name1].AddRange(D[name2]);
-                    D[name2].AddRange(tmp);
-                }
-            }
-
-            // Создаём граф
-            Graph res = new Graph();
-            foreach ((int edgeVal, string name1, string name2) in T) {
-                if (!res.Vertices.ContainsKey(name1)) {
-                    res.AddVertex(name1);
-                    res.Vertices[name1].VertexDrawing = Vertices[name1].VertexDrawing;
-                }
-                if (!res.Vertices.ContainsKey(name2)) {
-                    res.AddVertex(name2);
-                    res.Vertices[name2].VertexDrawing = Vertices[name2].VertexDrawing;
-                }
-                res.AddEdge(name1, name2, edgeVal);
-            }
-
-            return res;
-        }
-
-        #region Приватные DFS и BFS
         // Рекурсивный поиск в глубину
         public string _DFS(Vertex v, string res, HashSet<Vertex> visited, CancellationToken ct = new CancellationToken()) {
             if (visited.Contains(v)) return res;
@@ -385,7 +325,110 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
-        #region Приватные вспомогательные методы
+        #region Алгоритм Краскала и Прима
+        // Алгоритм Краскала
+        public Graph Kruskal() {
+            List<(int edgeVal, string name1, string name2)> edges = _GetEdgesArr(); // список рёбер острова
+
+            Comparison<(int edgeVal, string name1, string name2)> comparison = (edge1, edge2) => edge1.edgeVal.CompareTo(edge2.edgeVal);
+            edges.Sort(comparison);
+            HashSet<string> U = new HashSet<string>(); // список СОЕДИНЁННЫХ вершин
+            Dictionary<string, List<string>> D = new Dictionary<string, List<string>>(); // словарь списка изолированных групп вершин
+            List<(int edgeVal, string name1, string name2)> T = new List<(int edgeVal, string name1, string name2)>(); // список рёбер острова
+
+            // проходим по рёбрам и соеденяем ИЗОЛИРОВАННЫЕ вершины
+            foreach ((int edgeVal, string name1, string name2) in edges) {
+                if (!U.Contains(name1) || !U.Contains(name2)) {
+                    if (!U.Contains(name1) && !U.Contains(name2)) {
+                        D[name1] = new List<string>() { name1, name2 };
+                        D[name2] = D[name1];
+                    } else {
+                        if (!D.ContainsKey(name1)) {
+                            D[name2].Add(name1);
+                            D[name1] = D[name2];
+                        } else {
+                            D[name1].Add(name2);
+                            D[name2] = D[name1];
+                        }
+                    }
+
+                    T.Add((edgeVal, name1, name2));
+                    U.Add(name1);
+                    U.Add(name2);
+                }
+            }
+
+            // проходим по рёбрам второй раз и объеденяем разрозненные группы вершин
+            foreach ((int edgeVal, string name1, string name2) in edges) {
+                if (!D[name1].Contains(name2)) {
+                    T.Add((edgeVal, name1, name2));
+                    List<string> tmp = new List<string>(D[name1]);
+                    D[name1].AddRange(D[name2]);
+                    D[name2].AddRange(tmp);
+                }
+            }
+
+            // Создаём граф
+            Graph res = CreateGraphFromEdgesArr(T);
+            return res;
+        }
+
+        // Алгоритм Прима
+        public Graph Prima() {
+            List<(int edgeVal, string name1, string name2)> edges = _GetEdgesArr();
+            edges.Insert(0, (int.MaxValue, "", ""));
+
+            HashSet<string> U = new HashSet<string>() { _GetVertexArr()[0].Name }; // множество соединённых вершин
+            List<(int edgeVal, string name1, string name2)> T = new List<(int edgeVal, string name1, string name2)>(); // список рёбер острова
+
+            while (U.Count < N) {
+                (int edgeVal, string name1, string name2) minEdge = GetMinEdgePrima(edges, U);
+                if (minEdge.edgeVal == int.MaxValue) break;
+
+                T.Add(minEdge);
+                U.Add(minEdge.name1);
+                U.Add(minEdge.name2);
+            }
+
+            // Создаём граф
+            Graph res = CreateGraphFromEdgesArr(T);
+            return res;
+        }
+
+        // Получить ребро с наименьшим весом
+        private (int edgeVal, string name1, string name2) GetMinEdgePrima(List<(int edgeVal, string name1, string name2)> edges, HashSet<string> U) {
+            (int edgeVal, string name1, string name2) minEdge = (int.MaxValue, "", "");
+            foreach (string name in U) {
+                var curEdge = edges[0];
+                foreach ((int edgeVal, string name1, string name2) in edges) {
+                    if ((name == name1 || name == name2) && (!U.Contains(name1) || !U.Contains(name2))) {
+                        if (curEdge.edgeVal > edgeVal) curEdge = (edgeVal, name1, name2);
+                    }
+                }
+                if (minEdge.edgeVal > curEdge.edgeVal) minEdge = curEdge;
+            }
+            return minEdge;
+        }
+
+        private Graph CreateGraphFromEdgesArr(List<(int edgeVal, string name1, string name2)> edgesArr) {
+            Graph res = new Graph();
+            foreach ((int edgeVal, string name1, string name2) in edgesArr) {
+                if (!res.Vertices.ContainsKey(name1)) {
+                    res.AddVertex(name1);
+                    res.Vertices[name1].VertexDrawing = Vertices[name1].VertexDrawing;
+                }
+                if (!res.Vertices.ContainsKey(name2)) {
+                    res.AddVertex(name2);
+                    res.Vertices[name2].VertexDrawing = Vertices[name2].VertexDrawing;
+                }
+                res.AddEdgeBothWays(name1, name2, edgeVal);
+            }
+
+            return res;
+        }
+        #endregion
+
+        #region Вспомогательные методы
         // Получить массив вершин
         private List<Vertex> _GetVertexArr() {
             List<Vertex> vertices = Vertices.Values.ToList();

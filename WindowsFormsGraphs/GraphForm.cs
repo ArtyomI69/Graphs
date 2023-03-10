@@ -332,6 +332,10 @@ namespace WindowsFormsGraphs {
                         Kruskal();
                         break;
                     }
+                case "Алгоритм Прима": {
+                        Prima();
+                        break;
+                    }
                 default: break;
             }
         }
@@ -405,8 +409,21 @@ namespace WindowsFormsGraphs {
         }
 
         private void Kruskal() {
-            Graph newGraph = graph.Kruskal();
-            ShowNewGraph(newGraph);
+            try {
+                Graph newGraph = graph.Kruskal();
+                ShowNewGraph(newGraph);
+            } catch {
+                ShowNewGraph(new Graph());
+            }
+        }
+
+        private void Prima() {
+            try {
+                Graph newGraph = graph.Prima();
+                ShowNewGraph(newGraph);
+            } catch {
+                ShowNewGraph(new Graph());
+            }
         }
         #endregion
 

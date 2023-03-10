@@ -465,7 +465,8 @@
             "BFS Matrix",
             "DFS",
             "DFS Matrix",
-            "Алгоритм Краскала"});
+            "Алгоритм Краскала",
+            "Алгоритм Прима"});
             this.comboBoxAlgos.Location = new System.Drawing.Point(3, 83);
             this.comboBoxAlgos.Name = "comboBoxAlgos";
             this.comboBoxAlgos.Size = new System.Drawing.Size(130, 28);
