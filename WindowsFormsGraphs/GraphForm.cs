@@ -62,9 +62,7 @@ namespace WindowsFormsGraphs {
         private void pictureBox_MouseClick(object sender, MouseEventArgs e) {
             if (isAlgorithmRunning) return;
             if (selectedMode == SelectedMode.AddVertex) {
-                string name;
-                if (e.Button == MouseButtons.Left) name = GetValidLetterName();
-                else name = GetValidNumberName();
+                string name = GetValidLetterName();
                 AddVertex(e.X, e.Y, name);
             }
             if (selectedMode == SelectedMode.DeleteVertex) {
@@ -146,16 +144,6 @@ namespace WindowsFormsGraphs {
             return name;
         }
 
-        private string GetValidNumberName() {
-            int i = 1;
-            string name = (graph.Vertices.Count + i).ToString();
-            while (graph.Vertices.TryGetValue(name, out Vertex _)) {
-                i++;
-                name = Convert.ToChar(graph.Vertices.Count + 65 + i).ToString();
-            }
-            return name;
-        }
-
         private void AddVertex(int x, int y, string name) {
             VertexDrawing vertexDrawing = new VertexDrawing(x, y, name);
             Vertex newVertex = new Vertex(name);
@@ -211,17 +199,6 @@ namespace WindowsFormsGraphs {
                 VertexDrawing vertexDrawing = new VertexDrawing(x, y, vertex.Name);
                 vertex.VertexDrawing = vertexDrawing;
             }
-        }
-
-        private string MatrixToString(int[,] matrix) {
-            string res = "";
-            for (int i = 0; i < matrix.GetLength(0); i++) {
-                for (int j = 0; j < matrix.GetLength(1); j++) {
-                    res += $"{matrix[i, j]} ";
-                }
-                res += "\n";
-            }
-            return res;
         }
 
         private void SaveGraphToFile(string fileName) {
@@ -321,6 +298,7 @@ namespace WindowsFormsGraphs {
 
         #region Алгоритмы
         private void buttonStart_Click(object sender, EventArgs e) {
+            ClearResultsText();
             string selectedAlgo = comboBoxAlgos.SelectedItem.ToString();
             switch (selectedAlgo) {
                 case "Матрица смежности": {
@@ -349,6 +327,10 @@ namespace WindowsFormsGraphs {
                     }
                 case "Алгоритм Прима": {
                         Prima();
+                        break;
+                    }
+                case "Алгоритм Дейкстры": {
+                        Dijkstra();
                         break;
                     }
                 default: break;
@@ -436,6 +418,19 @@ namespace WindowsFormsGraphs {
                 ShowNewGraph(new Graph());
             }
         }
+
+        private void Dijkstra() {
+            try {
+                string name = textBoxFrom.Text;
+                int[] res = graph.Dijkstra(name);
+                textBoxResults.Text = $"Расстояние от вершины {name} до всех вершин:\n";
+                foreach (Vertex v in graph.Vertices.Values) textBoxResults.Text += $"{v.Name} ";
+                textBoxResults.Text += "\n";
+                textBoxResults.Text += ArrToString(res);
+            } catch {
+                textBoxResults.Text = "Данной вершины не существует";
+            }
+        }
         #endregion
 
         #region Методы рисования
@@ -445,13 +440,10 @@ namespace WindowsFormsGraphs {
         }
 
         private void DrawAll() {
-            // Очищаем канвас
             ClearPictureBox();
 
-            // Рисуем вершины
             DrawVertices(Color.Black);
 
-            // Рисуем рёбра
             DrawEdges();
         }
 
@@ -511,7 +503,7 @@ namespace WindowsFormsGraphs {
         private void DrawEdges() {
             foreach (Vertex vertex in graph.Vertices.Values) {
                 foreach (Vertex neighbour in vertex.Neighbours.Values) {
-                    DrawEdge(vertex, neighbour, Color.Black);
+                    DrawEdge(vertex, neighbour, Color.Gray);
                 }
             }
         }
@@ -549,6 +541,10 @@ namespace WindowsFormsGraphs {
         #endregion
 
         #region Вспомогательные методы
+        private void ClearResultsText() {
+            textBoxResults.Clear();
+        }
+
         private void ShowNewGraph(Graph newGraph) {
             ShowGraphForm showGraphForm = new ShowGraphForm(newGraph);
             showGraphForm.Show();
@@ -559,6 +555,22 @@ namespace WindowsFormsGraphs {
             return Regex.Replace(text, @"^\s*$\n|\r", string.Empty, RegexOptions.Multiline).TrimEnd();
         }
 
+        private string ArrToString(int[] arr) {
+            string res = "";
+            foreach (int el in arr) res += $"{el} ";
+            return res;
+        }
+
+        private string MatrixToString(int[,] matrix) {
+            string res = "";
+            for (int i = 0; i < matrix.GetLength(0); i++) {
+                for (int j = 0; j < matrix.GetLength(1); j++) {
+                    res += $"{matrix[i, j]} ";
+                }
+                res += "\n";
+            }
+            return res;
+        }
         #endregion
     }
 }

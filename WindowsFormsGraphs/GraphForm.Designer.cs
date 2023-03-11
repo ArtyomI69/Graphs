@@ -322,10 +322,9 @@
             this.tableLayoutPanel6.Dock = System.Windows.Forms.DockStyle.Fill;
             this.tableLayoutPanel6.Location = new System.Drawing.Point(3, 393);
             this.tableLayoutPanel6.Name = "tableLayoutPanel6";
-            this.tableLayoutPanel6.RowCount = 3;
+            this.tableLayoutPanel6.RowCount = 2;
             this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 20F));
-            this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 70F));
-            this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 10F));
+            this.tableLayoutPanel6.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 80F));
             this.tableLayoutPanel6.Size = new System.Drawing.Size(142, 254);
             this.tableLayoutPanel6.TabIndex = 1;
             // 
@@ -361,7 +360,7 @@
             this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 20F));
             this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30F));
             this.tableLayoutPanel7.RowStyles.Add(new System.Windows.Forms.RowStyle(System.Windows.Forms.SizeType.Percent, 30F));
-            this.tableLayoutPanel7.Size = new System.Drawing.Size(136, 171);
+            this.tableLayoutPanel7.Size = new System.Drawing.Size(136, 198);
             this.tableLayoutPanel7.TabIndex = 1;
             // 
             // tableLayoutPanel8
@@ -447,9 +446,9 @@
             this.buttonCancel.Enabled = false;
             this.buttonCancel.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
             this.buttonCancel.ForeColor = System.Drawing.SystemColors.ControlText;
-            this.buttonCancel.Location = new System.Drawing.Point(3, 146);
+            this.buttonCancel.Location = new System.Drawing.Point(3, 164);
             this.buttonCancel.Name = "buttonCancel";
-            this.buttonCancel.Size = new System.Drawing.Size(130, 22);
+            this.buttonCancel.Size = new System.Drawing.Size(130, 31);
             this.buttonCancel.TabIndex = 6;
             this.buttonCancel.Text = "Отменить алгоритм";
             this.buttonCancel.UseVisualStyleBackColor = false;
@@ -460,9 +459,9 @@
             this.buttonStart.BackColor = System.Drawing.Color.White;
             this.buttonStart.Dock = System.Windows.Forms.DockStyle.Fill;
             this.buttonStart.Font = new System.Drawing.Font("Microsoft Sans Serif", 10.2F, System.Drawing.FontStyle.Bold, System.Drawing.GraphicsUnit.Point, ((byte)(204)));
-            this.buttonStart.Location = new System.Drawing.Point(3, 119);
+            this.buttonStart.Location = new System.Drawing.Point(3, 129);
             this.buttonStart.Name = "buttonStart";
-            this.buttonStart.Size = new System.Drawing.Size(130, 21);
+            this.buttonStart.Size = new System.Drawing.Size(130, 29);
             this.buttonStart.TabIndex = 7;
             this.buttonStart.Text = "Начать";
             this.buttonStart.UseVisualStyleBackColor = false;
@@ -480,7 +479,8 @@
             "DFS",
             "DFS Matrix",
             "Алгоритм Краскала",
-            "Алгоритм Прима"});
+            "Алгоритм Прима",
+            "Алгоритм Дейкстры"});
             this.comboBoxAlgos.Location = new System.Drawing.Point(3, 83);
             this.comboBoxAlgos.Name = "comboBoxAlgos";
             this.comboBoxAlgos.Size = new System.Drawing.Size(130, 28);

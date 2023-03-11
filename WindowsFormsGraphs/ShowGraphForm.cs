@@ -21,12 +21,12 @@ namespace WindowsFormsGraphs {
             this.graph = graph;
             InitializeComponent();
             InitializaeState();
-            DrawPictureBox();
+            DrawAll();
         }
 
         private void ShowGraphForm_Resize(object sender, EventArgs e) {
             InitializaeState();
-            DrawPictureBox();
+            DrawAll();
         }
 
         private void InitializaeState() {
@@ -47,14 +47,11 @@ namespace WindowsFormsGraphs {
             pictureBox.Image = bm;
         }
 
-        private void DrawPictureBox() {
-            // Очищаем канвас
+        private void DrawAll() {
             ClearPictureBox();
 
-            // Рисуем вершины
             DrawVertices(Color.Black);
 
-            // Рисуем рёбра
             DrawEdges();
         }
 

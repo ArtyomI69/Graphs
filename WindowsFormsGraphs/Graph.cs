@@ -440,6 +440,52 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
+        #region Алгоритм Дейкстры
+        public int[] Dijkstra(string name) {
+            int[] res = new int[N];
+            for (int i = 0; i < N; i++) res[i] = int.MaxValue;
+
+            List<Vertex> vertices = _GetVertexArr();
+            int v = vertices.IndexOf(Vertices[name]); // стартовая вершина
+            HashSet<int> visited = new HashSet<int>() { v }; // просмотренные вершины
+            res[v] = 0; // нулевой вес для стартовой вершины
+
+            while (v != -1) {
+                foreach (int j in GetLinkV(v)) {
+                    if (!visited.Contains(j)) {
+                        int curVertex = res[v] + AdjMatrix[v, j];
+                        res[j] = Math.Min(curVertex, res[j]);
+                    }
+                }
+
+                v = MinVertex(res, visited);
+                visited.Add(v);
+            }
+
+            return res;
+        }
+
+        private IEnumerable<int> GetLinkV(int v) {
+            for (int j = 0; j < N; j++) {
+                if (AdjMatrix[v, j] != 0) yield return j;
+            }
+        }
+
+        private int MinVertex(int[] vertices, HashSet<int> visited) {
+            int minVertex = -1;
+            int min = vertices.Max();
+            for (int i = 0; i < N; i++) {
+                int cur = vertices[i];
+                if (cur < min && !visited.Contains(i)) {
+                    min = cur;
+                    minVertex = i;
+                }
+            }
+
+            return minVertex;
+        }
+        #endregion
+
         #region Вспомогательные методы
         // Получить массив вершин
         private List<Vertex> _GetVertexArr() {
