@@ -20,12 +20,7 @@ namespace WindowsFormsGraphs {
         private void buttonSubmit_Click(object sender, EventArgs e) {
             string from = textBoxFrom.Text;
             string to = textBoxTo.Text;
-            int weight;
-            if (textBoxWeight.Text != "") {
-                weight = Math.Abs(int.Parse(textBoxWeight.Text));
-            } else {
-                weight = 0;
-            }
+            int weight = Math.Abs((int)(numericUpDownWeight.Value));
             bool bothWays = buttonUndirected.Checked;
             AddEdge(from, to, weight, bothWays);
             Close();

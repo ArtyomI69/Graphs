@@ -31,6 +31,7 @@ namespace WindowsFormsGraphs {
 
         #region Конструктор и Resize обработчик событий
         public GraphForm() {
+            graph = new Graph();
             InitializeComponent();
 
             InitializaeState();
@@ -46,19 +47,31 @@ namespace WindowsFormsGraphs {
             buttonAddVert.BackColor = Color.Gray;
             buttonDelVert.BackColor = Color.White;
 
-            Graph.SetMethodsForDrawing(DrawVertex, DrawVertices);
-            graph = new Graph();
+            Graph.SetMethodsForDrawing(DrawVertex, DrawVertices, DrawEdge);
+            DrawAll();
         }
 
         private void ConfigureBitmapSize() {
             if (pictureBox.Width == 0 || pictureBox.Height == 0) return;
             bm = new Bitmap(pictureBox.Width, pictureBox.Height);
             g = Graphics.FromImage(bm);
-            ClearPictureBox();
         }
         #endregion
 
         #region Панель управления
+        private void pictureBox_MouseClick(object sender, MouseEventArgs e) {
+            if (isAlgorithmRunning) return;
+            if (selectedMode == SelectedMode.AddVertex) {
+                string name;
+                if (e.Button == MouseButtons.Left) name = GetValidLetterName();
+                else name = GetValidNumberName();
+                AddVertex(e.X, e.Y, name);
+            }
+            if (selectedMode == SelectedMode.DeleteVertex) {
+                DeleteVertex(e.X, e.Y);
+            }
+        }
+
         private void buttonAddVert_Click(object sender, EventArgs e) {
             SelectAddVertexMode();
         }
@@ -80,7 +93,7 @@ namespace WindowsFormsGraphs {
         private void buttonAddAdjMatrix_Click(object sender, EventArgs e) {
             AddAdjMatrixForm adjMatrixForm = new AddAdjMatrixForm(CreateAdjMatrixGraph);
             adjMatrixForm.Show();
-            DrawPictureBox();
+            DrawAll();
         }
 
         private void buttonSave_Click(object sender, EventArgs e) {
@@ -90,6 +103,10 @@ namespace WindowsFormsGraphs {
 
         private void buttonLoad_Click(object sender, EventArgs e) {
             LoadGraphFromFile();
+        }
+
+        private void buttonRefresh_Click(object sender, EventArgs e) {
+            DrawAll();
         }
 
         private void buttonClear_Click(object sender, EventArgs e) {
@@ -116,10 +133,10 @@ namespace WindowsFormsGraphs {
         private void CreateAdjMatrixGraph(int[,] matrix) {
             graph = new Graph(matrix);
             AddRandomVerteciesDrawing();
-            DrawPictureBox();
+            DrawAll();
         }
 
-        private string GetValidName() {
+        private string GetValidLetterName() {
             int i = 0;
             string name = Convert.ToChar(graph.Vertices.Count + 65 + i).ToString();
             while (graph.Vertices.TryGetValue(name, out Vertex _)) {
@@ -129,26 +146,34 @@ namespace WindowsFormsGraphs {
             return name;
         }
 
-        private void AddVertex(int x, int y) {
-            string name = GetValidName();
+        private string GetValidNumberName() {
+            int i = 1;
+            string name = (graph.Vertices.Count + i).ToString();
+            while (graph.Vertices.TryGetValue(name, out Vertex _)) {
+                i++;
+                name = Convert.ToChar(graph.Vertices.Count + 65 + i).ToString();
+            }
+            return name;
+        }
 
+        private void AddVertex(int x, int y, string name) {
             VertexDrawing vertexDrawing = new VertexDrawing(x, y, name);
             Vertex newVertex = new Vertex(name);
             newVertex.VertexDrawing = vertexDrawing;
             graph.AddVertex(newVertex);
-            DrawPictureBox();
+            DrawAll();
         }
 
         private void DeleteVertex(int x, int y) {
             try {
-                foreach (Vertex vertex in graph.Vertices.Values) {
+                foreach (Vertex vertex in graph.Vertices.Values.Reverse()) {
                     VertexDrawing vertexDrawing = vertex.VertexDrawing;
                     Rectangle regionCapture = vertexDrawing.RegionCapture();
                     bool inWidthRange = x > regionCapture.X && x < regionCapture.X + regionCapture.Width;
                     bool inHeightRange = y > regionCapture.Y && y < regionCapture.Y + regionCapture.Height;
                     if (inWidthRange && inHeightRange) {
                         graph.RemoveVertex(vertex.Name);
-                        DrawPictureBox();
+                        DrawAll();
                         return;
                     }
                 }
@@ -163,7 +188,7 @@ namespace WindowsFormsGraphs {
                     graph.AddEdgeBothWays(from, to, weight);
                 else
                     graph.AddEdge(from, to, weight);
-                DrawPictureBox();
+                DrawAll();
             } catch (Exception e) {
                 textBoxResults.Text = e.Message;
             }
@@ -172,7 +197,7 @@ namespace WindowsFormsGraphs {
         public void RemoveEdge(string name1, string name2) {
             try {
                 graph.RemoveEdge(name1, name2);
-                DrawPictureBox();
+                DrawAll();
             } catch (Exception e) {
                 textBoxResults.Text = e.Message;
             }
@@ -284,23 +309,13 @@ namespace WindowsFormsGraphs {
 
             GetVerticesDrawingFromText(verticesDrawingText);
 
-            DrawPictureBox();
+            DrawAll();
         }
 
         private string GetRelativePath() {
             string[] separatingString = { "WindowsFormsGraphs" };
             string relativePath = Directory.GetCurrentDirectory().Split(separatingString, StringSplitOptions.None)[0];
             return relativePath;
-        }
-
-        private void pictureBox_MouseClick(object sender, MouseEventArgs e) {
-            if (isAlgorithmRunning) return;
-            if (selectedMode == SelectedMode.AddVertex) {
-                AddVertex(e.X, e.Y);
-            }
-            if (selectedMode == SelectedMode.DeleteVertex) {
-                DeleteVertex(e.X, e.Y);
-            }
         }
         #endregion
 
@@ -360,7 +375,6 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
-            DrawPictureBox();
         }
 
         private async void BFSMatrix() {
@@ -375,7 +389,6 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
-            DrawPictureBox();
         }
 
         private async void DFS() {
@@ -390,7 +403,6 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
-            DrawPictureBox();
         }
 
         private async void DFSMatrix() {
@@ -405,7 +417,6 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
-            DrawPictureBox();
         }
 
         private void Kruskal() {
@@ -433,7 +444,7 @@ namespace WindowsFormsGraphs {
             pictureBox.Image = bm;
         }
 
-        private void DrawPictureBox() {
+        private void DrawAll() {
             // Очищаем канвас
             ClearPictureBox();
 
@@ -459,46 +470,50 @@ namespace WindowsFormsGraphs {
             }
         }
 
-        private void DrawEdges() {
-            Pen penEdge = new Pen(Color.Gray);
+        private void DrawEdge(Vertex v1, Vertex v2, Color color) {
+            Pen penEdge = new Pen(color);
             AdjustableArrowCap arrow = new AdjustableArrowCap(10, 10);
             Font font = new Font(FontFamily.GenericSansSerif, 9, FontStyle.Regular);
             penEdge.CustomEndCap = arrow;
+            string edgeWeight = v1.EdgesVal[v2.Name].ToString();
+            if (v1 == v2) {
+                g.DrawString(
+                    $"Петля {edgeWeight}", font, new SolidBrush(Color.Black),
+                    v1.VertexDrawing.Center.X - VertexDrawing.Size / 2,
+                    v1.VertexDrawing.Center.Y - VertexDrawing.Size
+                );
+                return;
+            }
+
+            int radius = VertexDrawing.Size / 2;
+            PointF vertex1Center = new PointF(v1.VertexDrawing.Center.X, v1.VertexDrawing.Center.Y);
+            PointF vertex2Center = new PointF(v2.VertexDrawing.Center.X, v2.VertexDrawing.Center.Y);
+
+            PointF vector = new PointF(vertex1Center.X - vertex2Center.X, vertex1Center.Y - vertex2Center.Y);
+            float m = (float)Math.Sqrt(vector.X * vector.X + vector.Y * vector.Y);
+            vector.X /= m;
+            vector.X *= radius;
+            vector.Y /= m;
+            vector.Y *= radius;
+
+            vertex2Center.X += vector.X;
+            vertex2Center.Y += vector.Y;
+            vertex1Center.X -= vector.X;
+            vertex1Center.Y -= vector.Y;
+
+            g.DrawLine(penEdge, vertex1Center, vertex2Center);
+            float arrowCenterX = (vertex1Center.X + vertex2Center.X) / 2;
+            float arrowCenterY = (vertex1Center.Y + vertex2Center.Y) / 2;
+            g.DrawString(edgeWeight, font, new SolidBrush(Color.Black), arrowCenterX, arrowCenterY);
+            pictureBox.Refresh();
+        }
+
+        private void DrawEdges() {
             foreach (Vertex vertex in graph.Vertices.Values) {
                 foreach (Vertex neighbour in vertex.Neighbours.Values) {
-                    string edgeWeight = vertex.EdgesVal[neighbour.Name].ToString();
-                    if (vertex == neighbour) {
-                        g.DrawString(
-                            $"Петля {edgeWeight}", font, new SolidBrush(Color.Black),
-                            vertex.VertexDrawing.Center.X - VertexDrawing.Size / 2,
-                            vertex.VertexDrawing.Center.Y - VertexDrawing.Size
-                        );
-                        continue;
-                    }
-
-                    int radius = VertexDrawing.Size / 2;
-                    PointF vertex1Center = new PointF(vertex.VertexDrawing.Center.X, vertex.VertexDrawing.Center.Y);
-                    PointF vertex2Center = new PointF(neighbour.VertexDrawing.Center.X, neighbour.VertexDrawing.Center.Y);
-
-                    PointF vector = new PointF(vertex1Center.X - vertex2Center.X, vertex1Center.Y - vertex2Center.Y);
-                    float m = (float)Math.Sqrt(vector.X * vector.X + vector.Y * vector.Y);
-                    vector.X /= m;
-                    vector.X *= radius;
-                    vector.Y /= m;
-                    vector.Y *= radius;
-
-                    vertex2Center.X += vector.X;
-                    vertex2Center.Y += vector.Y;
-                    vertex1Center.X -= vector.X;
-                    vertex1Center.Y -= vector.Y;
-
-                    g.DrawLine(penEdge, vertex1Center, vertex2Center);
-                    float arrowCenterX = (vertex1Center.X + vertex2Center.X) / 2;
-                    float arrowCenterY = (vertex1Center.Y + vertex2Center.Y) / 2;
-                    g.DrawString(edgeWeight, font, new SolidBrush(Color.Black), arrowCenterX, arrowCenterY);
+                    DrawEdge(vertex, neighbour, Color.Black);
                 }
             }
-            pictureBox.Refresh();
         }
         #endregion
 
@@ -537,7 +552,7 @@ namespace WindowsFormsGraphs {
         private void ShowNewGraph(Graph newGraph) {
             ShowGraphForm showGraphForm = new ShowGraphForm(newGraph);
             showGraphForm.Show();
-            Graph.SetMethodsForDrawing(DrawVertex, DrawVertices);
+            Graph.SetMethodsForDrawing(DrawVertex, DrawVertices, DrawEdge);
         }
 
         private string RemoveEmptyLines(string text) {

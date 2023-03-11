@@ -11,12 +11,14 @@ using System.Threading;
 namespace WindowsFormsGraphs {
     public delegate void DrawVertexDelegate(Vertex vertex, Color color, int mileSeconds = 0);
     public delegate void DrawVerticesDelegate(Color color);
+    public delegate void DrawEdgeDelegate(Vertex v1, Vertex v2, Color color);
     public class Graph {
         #region Поля
         // Статические поля
-        public static bool HaveDrawingMethods = false;
+        private static bool HaveDrawingMethods = false;
         private static DrawVertexDelegate DrawVertex;
         private static DrawVerticesDelegate DrawVertices;
+        private static DrawEdgeDelegate DrawEdge;
 
         // Поля
         public Dictionary<string, Vertex> Vertices = new Dictionary<string, Vertex>();
@@ -26,10 +28,11 @@ namespace WindowsFormsGraphs {
 
         #region Статические поля и конструкторы
         // Добавляет графические методы для визуализации графа
-        public static void SetMethodsForDrawing(DrawVertexDelegate drawVertex, DrawVerticesDelegate drawVertices) {
+        public static void SetMethodsForDrawing(DrawVertexDelegate drawVertex, DrawVerticesDelegate drawVertices, DrawEdgeDelegate drawEdge) {
             HaveDrawingMethods = true;
             DrawVertex = drawVertex;
             DrawVertices = drawVertices;
+            DrawEdge = drawEdge;
         }
 
         // Конструктор графа
@@ -100,6 +103,9 @@ namespace WindowsFormsGraphs {
         public void AddEdge(string name1, string name2, int edgeVal) {
             try {
                 if (edgeVal <= 0) return;
+
+                if (name1 != "" && name2 == "") name2 = name1;
+                if (name2 != "" && name1 == "") name1 = name2;
                 Vertex v1 = Vertices[name1];
                 Vertex v2 = Vertices[name2];
                 v1.AddEdge(v2, edgeVal);
@@ -110,6 +116,8 @@ namespace WindowsFormsGraphs {
 
         // Добавление ребра в графе в обе стороны
         public void AddEdgeBothWays(string name1, string name2, int edgeVal) {
+            if (name1 != "" && name2 == "") name2 = name1;
+            if (name2 != "" && name1 == "") name1 = name2;
             AddEdge(name1, name2, edgeVal);
             if (name1 != name2) AddEdge(name2, name1, edgeVal);
         }
@@ -420,6 +428,10 @@ namespace WindowsFormsGraphs {
                 if (!res.Vertices.ContainsKey(name2)) {
                     res.AddVertex(name2);
                     res.Vertices[name2].VertexDrawing = Vertices[name2].VertexDrawing;
+                }
+                if (HaveDrawingMethods) {
+                    DrawEdge(Vertices[name1], Vertices[name2], Color.Red);
+                    DrawEdge(Vertices[name2], Vertices[name1], Color.Red);
                 }
                 res.AddEdgeBothWays(name1, name2, edgeVal);
             }
