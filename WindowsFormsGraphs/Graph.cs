@@ -102,7 +102,7 @@ namespace WindowsFormsGraphs {
         // Добавление ребра в графе в одну сторону
         public void AddEdge(string name1, string name2, int edgeVal) {
             try {
-                if (edgeVal <= 0) return;
+                if (edgeVal == 0) return;
 
                 if (name1 != "" && name2 == "") name2 = name1;
                 if (name2 != "" && name1 == "") name1 = name2;
@@ -157,29 +157,6 @@ namespace WindowsFormsGraphs {
             }
             return res;
         }
-
-        // Получение матрицы в виде строки
-        public string GetAdjMatrixString() {
-            string res = "";
-            // Выводим в первый ряд все вершины
-            res += "  ";
-            foreach (string vertexName in Vertices.Keys) res += $"{vertexName} ";
-            res += "\n";
-
-            // Составляем матрицу смежности
-            foreach (Vertex vertex in Vertices.Values) {
-                res += $"{vertex.Name} ";
-                foreach (string anotherVertexName in Vertices.Keys) {
-                    if (vertex.Neighbours.ContainsKey(anotherVertexName)) {
-                        res += $"{vertex.EdgesVal[anotherVertexName]} ";
-                    } else {
-                        res += "0 ";
-                    }
-                };
-                res += "\n";
-            }
-            return res;
-        }
         #endregion 
 
         #region DFS и BFS
@@ -200,7 +177,7 @@ namespace WindowsFormsGraphs {
             try {
                 if (HaveDrawingMethods) DrawVertices(Color.White);
 
-                List<Vertex> vertices = _GetVertexArr();
+                List<Vertex> vertices = GetVertexArr();
                 int start = vertices.FindIndex(vertex => vertex.Name == name);
                 bool[] visited = new bool[vertices.Count];
                 string res = "";
@@ -259,7 +236,7 @@ namespace WindowsFormsGraphs {
 
         // Поиск в глубину с помощью матрицы
         public string _DFSMatrix(int start, string res, bool[] visited, CancellationToken ct = new CancellationToken()) {
-            List<Vertex> vertices = _GetVertexArr();
+            List<Vertex> vertices = GetVertexArr();
             res += vertices[start].Name;
             if (HaveDrawingMethods) DrawVertex(vertices[start], Color.Gray, 1000);
             if (HaveDrawingMethods) DrawVertex(vertices[start], Color.Black);
@@ -303,7 +280,7 @@ namespace WindowsFormsGraphs {
         // Поиск в ширину с помощью матрицы
         private string _BFSMatrix(string name, CancellationToken ct = new CancellationToken()) {
             string res = name;
-            List<Vertex> vertices = _GetVertexArr();
+            List<Vertex> vertices = GetVertexArr();
             int start = vertices.FindIndex(vertex => vertex.Name == name);
             if (start == -1) throw new Exception();
 
@@ -386,7 +363,7 @@ namespace WindowsFormsGraphs {
             List<(int edgeVal, string name1, string name2)> edges = _GetEdgesArr();
             edges.Insert(0, (int.MaxValue, "", ""));
 
-            HashSet<string> U = new HashSet<string>() { _GetVertexArr()[0].Name }; // множество соединённых вершин
+            HashSet<string> U = new HashSet<string>() { GetVertexArr()[0].Name }; // множество соединённых вершин
             List<(int edgeVal, string name1, string name2)> T = new List<(int edgeVal, string name1, string name2)>(); // список рёбер острова
 
             while (U.Count < N) {
@@ -445,7 +422,7 @@ namespace WindowsFormsGraphs {
             int[] res = new int[N];
             for (int i = 0; i < N; i++) res[i] = int.MaxValue;
 
-            List<Vertex> vertices = _GetVertexArr();
+            List<Vertex> vertices = GetVertexArr();
             int v = vertices.IndexOf(Vertices[name]); // стартовая вершина
             HashSet<int> visited = new HashSet<int>() { v }; // просмотренные вершины
             res[v] = 0; // нулевой вес для стартовой вершины
@@ -459,7 +436,7 @@ namespace WindowsFormsGraphs {
                 }
 
                 v = MinVertex(res, visited);
-                visited.Add(v);
+                if (v != -1) visited.Add(v);
             }
 
             return res;
@@ -486,9 +463,65 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
+        #region Алгоритм Флойда
+        public (int[,] dist, int[,] next) Floyd() {
+            int[,] dist = AdjMatrix.Clone() as int[,];
+            int[,] next = new int[N, N]; // список предыдущих вершин для поиска кратчайшего маршрута
+            // Инициализируем массивы
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    if (dist[i, j] == 0 && i != j) dist[i, j] = int.MaxValue;
+                    next[i, j] = j;
+                }
+            }
+            for (int i = 0; i < N; i++) {
+                next[i, i] = i;
+            }
+
+            // Алгоритм Флойда
+            for (int k = 0; k < N; k++) {
+                for (int i = 0; i < N; i++) {
+                    for (int j = 0; j < N; j++) {
+                        int d = dist[i, k] + dist[k, j];
+                        if (dist[i, j] > d && d >= 0) {
+                            dist[i, j] = d;
+                            next[i, j] = next[i, k]; // номер промежуточной вершины при движении от i к j
+                        }
+                    }
+                }
+            }
+
+            return (dist, next);
+        }
+
+        public string GetPathFloyd(string from, string to) {
+            (int[,] _, int[,] next) = Floyd();
+            List<Vertex> vertices = GetVertexArr();
+            int u = vertices.IndexOf(Vertices[to]);
+            int v = vertices.IndexOf(Vertices[from]);
+            if (next[u, v] == int.MaxValue) throw new Exception();
+            string path = vertices[u].Name;
+            int prev = u;
+            while (u != v) {
+                u = next[u, v];
+                if (HaveDrawingMethods) {
+                    DrawEdge(vertices[u], vertices[prev], Color.Red);
+                    DrawEdge(vertices[prev], vertices[u], Color.Red);
+                }
+                prev = u;
+                path += vertices[u].Name;
+            }
+
+            char[] charArray = path.ToCharArray();
+            Array.Reverse(charArray);
+            path = new string(charArray);
+            return path;
+        }
+        #endregion
+
         #region Вспомогательные методы
         // Получить массив вершин
-        private List<Vertex> _GetVertexArr() {
+        public List<Vertex> GetVertexArr() {
             List<Vertex> vertices = Vertices.Values.ToList();
             return vertices;
         }
@@ -496,7 +529,7 @@ namespace WindowsFormsGraphs {
         private List<(int edgeVal, string name1, string name2)> _GetEdgesArr() {
             List<(int edgeVal, string name1, string name2)> res = new List<(int edgeVal, string name1, string name2)>();
             HashSet<(string name1, string name2)> visited = new HashSet<(string name1, string name2)>();
-            List<Vertex> vertices = _GetVertexArr();
+            List<Vertex> vertices = GetVertexArr();
             for (int i = 0; i < N; i++) {
                 for (int j = 0; j < N; j++) {
                     string name1 = vertices[i].Name;

@@ -23,8 +23,6 @@ namespace WindowsFormsGraphs {
         // Добавить ребро
         public void AddEdge(Vertex v, int edgeVal) {
             try {
-                edgeVal = Math.Abs(edgeVal);
-
                 Neighbours.Add(v.Name, v);
                 EdgesVal.Add(v.Name, edgeVal);
             } catch {

@@ -333,6 +333,14 @@ namespace WindowsFormsGraphs {
                         Dijkstra();
                         break;
                     }
+                case "Алгоритм Флойда": {
+                        Floyd();
+                        break;
+                    }
+                case "Кратчайший путь": {
+                        GetPathFloyd();
+                        break;
+                    }
                 default: break;
             }
         }
@@ -342,10 +350,28 @@ namespace WindowsFormsGraphs {
         }
 
         private void GetAdjMatrix() {
-            textBoxResults.Text = graph.GetAdjMatrixString();
+            string res = "";
+            int[,] adjMatrix = graph.GetAdjMatrix();
+            int N = adjMatrix.GetLength(0);
+            List<Vertex> vertices = graph.GetVertexArr();
+            res += "   ";
+            for (int i = 0; i < N; i++) {
+                res += $"{vertices[i].Name} ";
+            }
+            res += "\n";
+
+            for (int i = 0; i < N; i++) {
+                res += $"{vertices[i].Name} ";
+                for (int j = 0; j < N; j++) {
+                    res += $"{adjMatrix[i, j]} ";
+                }
+                res += "\n";
+            }
+            textBoxResults.Text = res;
         }
 
         private async void BFS() {
+            DrawAll();
             CancellationToken ct = StartAlgorithmProccess();
             await Task.Run(() => {
                 try {
@@ -357,9 +383,11 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
+            DrawAll();
         }
 
         private async void BFSMatrix() {
+            DrawAll();
             CancellationToken ct = StartAlgorithmProccess();
             await Task.Run(() => {
                 try {
@@ -371,9 +399,11 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
+            DrawAll();
         }
 
         private async void DFS() {
+            DrawAll();
             CancellationToken ct = StartAlgorithmProccess();
             await Task.Run(() => {
                 try {
@@ -385,9 +415,11 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
+            DrawAll();
         }
 
         private async void DFSMatrix() {
+            DrawAll();
             CancellationToken ct = StartAlgorithmProccess();
             await Task.Run(() => {
                 try {
@@ -399,10 +431,12 @@ namespace WindowsFormsGraphs {
                 }
             });
             FinnishAlgorithmProccess();
+            DrawAll();
         }
 
         private void Kruskal() {
             try {
+                DrawAll();
                 Graph newGraph = graph.Kruskal();
                 ShowNewGraph(newGraph);
             } catch {
@@ -412,6 +446,7 @@ namespace WindowsFormsGraphs {
 
         private void Prima() {
             try {
+                DrawAll();
                 Graph newGraph = graph.Prima();
                 ShowNewGraph(newGraph);
             } catch {
@@ -429,6 +464,41 @@ namespace WindowsFormsGraphs {
                 textBoxResults.Text += ArrToString(res);
             } catch {
                 textBoxResults.Text = "Данной вершины не существует";
+            }
+        }
+
+        private void Floyd() {
+            (int[,] dist, int[,] _) = graph.Floyd();
+            List<Vertex> vertices = graph.GetVertexArr();
+            int N = dist.GetLength(0);
+            if (N == 0) return;
+            string res = "Расстояние от каждой вершины до всех других вершин:\n";
+            res += "   ";
+            for (int i = 0; i < N; i++) {
+                res += $"{vertices[i].Name} ";
+            }
+            res += "\n";
+
+            for (int i = 0; i < N; i++) {
+                res += $"{vertices[i].Name} ";
+                for (int j = 0; j < N; j++) {
+                    if (dist[i, j] != int.MaxValue) res += $"{dist[i, j]} ";
+                    else res += "∞";
+                }
+                res += "\n";
+            }
+            textBoxResults.Text = res;
+        }
+
+        private void GetPathFloyd() {
+            try {
+                DrawAll();
+                string from = textBoxFrom.Text;
+                string to = textBoxTo.Text;
+                string path = graph.GetPathFloyd(from, to);
+                textBoxResults.Text = path;
+            } catch {
+                textBoxResults.Text = "Данная вершина не существует или недостижима.";
             }
         }
         #endregion
