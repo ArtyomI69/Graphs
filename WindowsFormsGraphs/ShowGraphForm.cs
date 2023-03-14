@@ -74,7 +74,7 @@ namespace WindowsFormsGraphs {
             Pen penEdge = new Pen(Color.Gray);
             AdjustableArrowCap arrow = new AdjustableArrowCap(10, 10);
             Font font = new Font(FontFamily.GenericSansSerif, 9, FontStyle.Regular);
-            penEdge.CustomEndCap = arrow;
+            if (!v2.Neighbours.ContainsValue(v1)) penEdge.CustomEndCap = arrow;
             string edgeWeight = v1.EdgesVal[v2.Name].ToString();
             if (v1 == v2) {
                 g.DrawString(
