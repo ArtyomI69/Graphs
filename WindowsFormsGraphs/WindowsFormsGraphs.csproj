@@ -73,6 +73,7 @@
     <Compile Include="AddEdgeForm.Designer.cs">
       <DependentUpon>AddEdgeForm.cs</DependentUpon>
     </Compile>
+    <Compile Include="Edge.cs" />
     <Compile Include="Graph.cs" />
     <Compile Include="GraphForm.cs">
       <SubType>Form</SubType>

@@ -242,7 +242,8 @@ namespace WindowsFormsGraphs {
             int[,] adjMatrix = new int[N, N];
             int i = 0, j = 0;
             foreach (string line in adjMatrixText.Split('\n')) {
-                foreach (string el in line.Trim().Split(' ')) {
+                string lineRemovedExtraSpaces = Regex.Replace(line, @"\s+", " ");
+                foreach (string el in lineRemovedExtraSpaces.Trim().Split(' ')) {
                     adjMatrix[i, j] = int.Parse(el);
                     j++;
                 }
@@ -305,6 +306,10 @@ namespace WindowsFormsGraphs {
                         GetAdjMatrix();
                         break;
                     }
+                case "Матрица инцидентонтсти": {
+                        GetIncidenceMatrix();
+                        break;
+                    }
                 case "BFS": {
                         BFS();
                         break;
@@ -341,6 +346,10 @@ namespace WindowsFormsGraphs {
                         GetPathFloyd();
                         break;
                     }
+                case "Алгоритм Беллмана-Форда": {
+                        BellmanFord();
+                        break;
+                    }
                 default: break;
             }
         }
@@ -364,6 +373,28 @@ namespace WindowsFormsGraphs {
                 res += $"{vertices[i].Name} ";
                 for (int j = 0; j < N; j++) {
                     res += $"{adjMatrix[i, j]} ";
+                }
+                res += "\n";
+            }
+            textBoxResults.Text = res;
+        }
+
+        private void GetIncidenceMatrix() {
+            string res = "";
+            int[,] incidenceMatrix = graph.GetIncidenceMatrix();
+            int N = incidenceMatrix.GetLength(0);
+            int edgeCount = incidenceMatrix.GetLength(1);
+            List<Vertex> vertices = graph.GetVertexArr();
+            res += "   ";
+            foreach (Edge edge in graph.Edges) {
+                res += $"{edge.From.Name}{edge.To.Name} ";
+            }
+            res += "\n";
+
+            for (int i = 0; i < N; i++) {
+                res += $"{vertices[i].Name} ";
+                for (int j = 0; j < edgeCount; j++) {
+                    res += $"{incidenceMatrix[i, j]}    ";
                 }
                 res += "\n";
             }
@@ -442,6 +473,7 @@ namespace WindowsFormsGraphs {
             } catch {
                 ShowNewGraph(new Graph());
             }
+            Graph.SetMethodsForDrawing(DrawVertex, DrawVertices, DrawEdge);
         }
 
         private void Prima() {
@@ -452,6 +484,7 @@ namespace WindowsFormsGraphs {
             } catch {
                 ShowNewGraph(new Graph());
             }
+            Graph.SetMethodsForDrawing(DrawVertex, DrawVertices, DrawEdge);
         }
 
         private void Dijkstra() {
@@ -468,26 +501,30 @@ namespace WindowsFormsGraphs {
         }
 
         private void Floyd() {
-            (int[,] dist, int[,] _) = graph.Floyd();
-            List<Vertex> vertices = graph.GetVertexArr();
-            int N = dist.GetLength(0);
-            if (N == 0) return;
-            string res = "Расстояние от каждой вершины до всех других вершин:\n";
-            res += "   ";
-            for (int i = 0; i < N; i++) {
-                res += $"{vertices[i].Name} ";
-            }
-            res += "\n";
-
-            for (int i = 0; i < N; i++) {
-                res += $"{vertices[i].Name} ";
-                for (int j = 0; j < N; j++) {
-                    if (dist[i, j] != int.MaxValue) res += $"{dist[i, j]} ";
-                    else res += "∞";
+            try {
+                (int[,] dist, int[,] _) = graph.Floyd();
+                List<Vertex> vertices = graph.GetVertexArr();
+                int N = dist.GetLength(0);
+                if (N == 0) return;
+                string res = "Расстояние от каждой вершины до всех других вершин:\n";
+                res += "   ";
+                for (int i = 0; i < N; i++) {
+                    res += $"{vertices[i].Name} ";
                 }
                 res += "\n";
+
+                for (int i = 0; i < N; i++) {
+                    res += $"{vertices[i].Name} ";
+                    for (int j = 0; j < N; j++) {
+                        if (dist[i, j] != int.MaxValue) res += $"{dist[i, j]} ";
+                        else res += "∞";
+                    }
+                    res += "\n";
+                }
+                textBoxResults.Text = res;
+            } catch {
+                textBoxResults.Text = "Данной вершины не существует";
             }
-            textBoxResults.Text = res;
         }
 
         private void GetPathFloyd() {
@@ -499,6 +536,19 @@ namespace WindowsFormsGraphs {
                 textBoxResults.Text = path;
             } catch {
                 textBoxResults.Text = "Данная вершина не существует или недостижима.";
+            }
+        }
+
+        private void BellmanFord() {
+            try {
+                string name = textBoxFrom.Text;
+                int[] res = graph.BellmanFord(name);
+                textBoxResults.Text = $"Расстояние от вершины {name} до всех вершин:\n";
+                foreach (Vertex v in graph.Vertices.Values) textBoxResults.Text += $"{v.Name} ";
+                textBoxResults.Text += "\n";
+                textBoxResults.Text += ArrToString(res);
+            } catch {
+                textBoxResults.Text = "Данной вершины не существует или в графе присутствуют цикл с негативным значением.";
             }
         }
         #endregion
@@ -544,6 +594,7 @@ namespace WindowsFormsGraphs {
                     v1.VertexDrawing.Center.X - VertexDrawing.Size / 2,
                     v1.VertexDrawing.Center.Y - VertexDrawing.Size
                 );
+                pictureBox.Refresh();
                 return;
             }
 
@@ -627,7 +678,8 @@ namespace WindowsFormsGraphs {
 
         private string ArrToString(int[] arr) {
             string res = "";
-            foreach (int el in arr) res += $"{el} ";
+            string inf = "∞";
+            foreach (int el in arr) res += $"{(el == int.MaxValue ? inf : el.ToString())} ";
             return res;
         }
 

@@ -22,6 +22,7 @@ namespace WindowsFormsGraphs {
 
         // Поля
         public Dictionary<string, Vertex> Vertices = new Dictionary<string, Vertex>();
+        public List<Edge> Edges = new List<Edge>();
         public int[,] AdjMatrix => GetAdjMatrix();
         public int N => Vertices.Count;
         #endregion
@@ -109,6 +110,14 @@ namespace WindowsFormsGraphs {
                 Vertex v1 = Vertices[name1];
                 Vertex v2 = Vertices[name2];
                 v1.AddEdge(v2, edgeVal);
+
+                Edge newEdge = new Edge(v1, v2, edgeVal);
+                bool haveEdge = Edges.FindIndex(edge => edge.From == v2 && edge.To == v1) != -1;
+                if (haveEdge) {
+                    Edge edge = Edges.Find(e => e.From == v2 && e.To == v1);
+                    edge.BothWays = true;
+                } else
+                    Edges.Add(newEdge);
             } catch {
                 throw new Exception("Данных вершин не существует или ребро между вершинами уже существует");
             }
@@ -116,8 +125,6 @@ namespace WindowsFormsGraphs {
 
         // Добавление ребра в графе в обе стороны
         public void AddEdgeBothWays(string name1, string name2, int edgeVal) {
-            if (name1 != "" && name2 == "") name2 = name1;
-            if (name2 != "" && name1 == "") name1 = name2;
             AddEdge(name1, name2, edgeVal);
             if (name1 != name2) AddEdge(name2, name1, edgeVal);
         }
@@ -137,10 +144,9 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
-        #region Матрица смежности
+        #region Матрица смежности и инцидентности
         // Получение матрицы смежности
         public int[,] GetAdjMatrix() {
-            int N = Vertices.Count;
             int[,] res = new int[N, N];
             int i = 0, j = 0;
             foreach (Vertex vertex in Vertices.Values) {
@@ -154,6 +160,22 @@ namespace WindowsFormsGraphs {
                 };
                 j = 0;
                 i++;
+            }
+            return res;
+        }
+
+        // Получение матрицы инцидентности
+        public int[,] GetIncidenceMatrix() {
+            List<Vertex> vertices = GetVertexArr();
+            int[,] res = new int[N, Edges.Count];
+            int j = 0;
+            foreach (Edge edge in Edges) {
+                int from = vertices.FindIndex(e => e == edge.From);
+                int to = vertices.FindIndex(e => e == edge.To);
+
+                res[from, j] = edge.BothWays ? 1 : -1; ;
+                res[to, j] = 1;
+                j++;
             }
             return res;
         }
@@ -516,6 +538,40 @@ namespace WindowsFormsGraphs {
             Array.Reverse(charArray);
             path = new string(charArray);
             return path;
+        }
+        #endregion
+
+        #region Алгоритм Беллмана-Форда
+        public int[] BellmanFord(string name) {
+            List<Vertex> vertices = GetVertexArr();
+            int start = vertices.IndexOf(Vertices[name]); // стартовая вершина
+
+            int[] distance = new int[N];
+
+            for (int j = 0; j < N; j++) {
+                distance[j] = int.MaxValue;
+            }
+            distance[start] = 0;
+
+            for (int i = 0; i < N; i++) {
+                foreach (Edge edge in Edges) {
+                    int from = vertices.IndexOf(Vertices[edge.From.Name]);
+                    int to = vertices.IndexOf(Vertices[edge.To.Name]);
+                    int weight = edge.Weight;
+                    if (distance[from] + weight < distance[to]) {
+                        distance[to] = distance[from] + weight;
+                    }
+                }
+            }
+
+            foreach (Edge edge in Edges) {
+                int from = vertices.IndexOf(Vertices[edge.From.Name]);
+                int to = vertices.IndexOf(Vertices[edge.To.Name]);
+                int weight = edge.Weight;
+                if (distance[from] + weight < distance[to]) throw new Exception("В графе присутствуют цикл с негативным значением");
+            }
+
+            return distance;
         }
         #endregion
 

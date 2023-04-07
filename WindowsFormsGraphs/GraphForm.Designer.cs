@@ -474,6 +474,7 @@
             this.comboBoxAlgos.FormattingEnabled = true;
             this.comboBoxAlgos.Items.AddRange(new object[] {
             "Матрица смежности",
+            "Матрица инцидентонтсти",
             "BFS",
             "BFS Matrix",
             "DFS",
@@ -482,7 +483,8 @@
             "Алгоритм Прима",
             "Алгоритм Дейкстры",
             "Алгоритм Флойда",
-            "Кратчайший путь"});
+            "Кратчайший путь",
+            "Алгоритм Беллмана-Форда"});
             this.comboBoxAlgos.Location = new System.Drawing.Point(3, 83);
             this.comboBoxAlgos.Name = "comboBoxAlgos";
             this.comboBoxAlgos.Size = new System.Drawing.Size(130, 28);

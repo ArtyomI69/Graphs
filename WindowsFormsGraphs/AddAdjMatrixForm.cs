@@ -25,7 +25,8 @@ namespace WindowsFormsGraphs {
                 int[,] adjMatrix = new int[N, N];
                 int i = 0, j = 0;
                 foreach (string line in input.Split('\n')) {
-                    foreach (string el in line.Trim().Split(' ')) {
+                    string lineRemovedExtraSpaces = Regex.Replace(line, @"\s+", " ");
+                    foreach (string el in lineRemovedExtraSpaces.Trim().Split(' ')) {
                         adjMatrix[i, j] = int.Parse(el);
                         j++;
                     }
