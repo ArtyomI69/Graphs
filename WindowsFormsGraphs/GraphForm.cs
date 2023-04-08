@@ -105,6 +105,7 @@ namespace WindowsFormsGraphs {
 
         private void buttonRefresh_Click(object sender, EventArgs e) {
             DrawAll();
+            textBoxResults.Clear();
         }
 
         private void buttonClear_Click(object sender, EventArgs e) {
@@ -350,6 +351,14 @@ namespace WindowsFormsGraphs {
                         BellmanFord();
                         break;
                     }
+                case "Компоненты сильной связанности": {
+                        SCC();
+                        break;
+                    }
+                case "Эйлеров цикл": {
+                        FindEulerCycle();
+                        break;
+                    }
                 default: break;
             }
         }
@@ -549,6 +558,36 @@ namespace WindowsFormsGraphs {
                 textBoxResults.Text += ArrToString(res);
             } catch {
                 textBoxResults.Text = "Данной вершины не существует или в графе присутствуют цикл с негативным значением.";
+            }
+        }
+
+        private void SCC() {
+            try {
+                List<List<Vertex>> scc = graph.SCC();
+                string res = "";
+                foreach (List<Vertex> list in scc) {
+                    foreach (Vertex v in list) {
+                        res += $"{v.Name} ";
+                    }
+                    res += "\n";
+                }
+                textBoxResults.Text = res;
+            } catch {
+                textBoxResults.Text = "Не удалось найти компоненты сильной смежности.";
+            }
+        }
+
+        private void FindEulerCycle() {
+            try {
+                List<Vertex> eulerCycle = graph.FindEulerCycle();
+                if (eulerCycle.Count == 0) throw new Exception();
+                string res = "";
+                foreach (Vertex vertex in eulerCycle) {
+                    res += $"{vertex.Name} ";
+                }
+                textBoxResults.Text = res;
+            } catch {
+                textBoxResults.Text = "Не удалось найти эйлеров цикл.";
             }
         }
         #endregion

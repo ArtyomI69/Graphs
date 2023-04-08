@@ -575,6 +575,162 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
+        #region Компоненты сильной 
+        public List<List<Vertex>> SCC() {
+            Stack<Vertex> stack = new Stack<Vertex>();
+            HashSet<Vertex> visited = new HashSet<Vertex>();
+            foreach (Vertex vertex in Vertices.Values)
+                if (!visited.Contains(vertex))
+                    DFSUtil(vertex, visited, stack);
+
+            Graph gr = new Graph();
+            foreach (Vertex vertex in Vertices.Values) {
+                gr.AddVertex(vertex.Name);
+            }
+
+            foreach (Vertex vertex in Vertices.Values) {
+                foreach (Vertex neighbour in vertex.Neighbours.Values) {
+                    gr.AddEdge(neighbour.Name, vertex.Name, vertex.EdgesVal[neighbour.Name]);
+                }
+            }
+
+            List<List<Vertex>> scc = new List<List<Vertex>>();
+            visited = new HashSet<Vertex>();
+            while (stack.Count > 0) {
+                Vertex v = stack.Pop();
+                if (!visited.Contains(v)) {
+                    Stack<Vertex> comp = new Stack<Vertex>();
+                    gr.DFSUtil(v, visited, comp);
+                    scc.Add(comp.ToList());
+                }
+            }
+
+            if (HaveDrawingMethods) {
+                Random rnd = new Random();
+                foreach (List<Vertex> list in scc) {
+                    Color randomColor = Color.FromArgb(rnd.Next(256), rnd.Next(256), rnd.Next(256));
+                    foreach (Vertex v in list) {
+                        DrawVertex(v, randomColor);
+                    }
+                }
+            }
+
+            return scc;
+        }
+
+        private void DFSUtil(Vertex v, HashSet<Vertex> visited, Stack<Vertex> comp) {
+            visited.Add(v);
+            comp.Push(v);
+            foreach (Vertex neighbour in v.Neighbours.Values)
+                if (!visited.Contains(neighbour))
+                    DFSUtil(neighbour, visited, comp);
+        }
+        #endregion
+
+        #region Эйлеров цикл
+        public List<Vertex> FindEulerCycle() {
+            List<Vertex> res = new List<Vertex>();
+            List<int> cycle = new List<int>();
+
+            int[,] tmpGraph = new int[N, N];
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    tmpGraph[i, j] = AdjMatrix[i, j];
+                }
+            }
+
+            // проверяем, что граф связный и каждая вершина имеет четную степень
+            if (!IsConnected() || !HasEvenDegrees(tmpGraph)) {
+                return res;
+            }
+
+            // выбираем начальную вершину
+            int start = 0;
+            for (int i = 0; i < N; i++) {
+                if (GetDegree(tmpGraph, i) % 2 == 1) {
+                    start = i;
+                    break;
+                }
+            }
+
+            // выполняем алгоритм Флери
+            Stack<int> stack = new Stack<int>();
+            stack.Push(start);
+            while (stack.Count > 0) {
+                int vertex = stack.Peek();
+                int degree = GetDegree(tmpGraph, vertex);
+
+                if (degree == 0) {
+                    // добавляем вершину в цикл и удаляем из стека
+                    cycle.Add(vertex);
+                    stack.Pop();
+                } else {
+                    // ищем соседнюю вершину и удаляем ребро
+                    for (int i = 0; i < N; i++) {
+                        if (tmpGraph[vertex, i] == 1) {
+                            tmpGraph[vertex, i] = 0;
+                            tmpGraph[i, vertex] = 0;
+                            stack.Push(i);
+                            break;
+                        }
+                    }
+                }
+            }
+
+            // переворачиваем цикл и возвращаем его
+            cycle.Reverse();
+
+            List<Vertex> vertices = GetVertexArr();
+            foreach (int v in cycle) {
+                res.Add(vertices[v]);
+            }
+            return res;
+        }
+
+        // метод для проверки, что граф связный
+        private bool IsConnected() {
+            bool[] visited = new bool[N];
+            Queue<int> queue = new Queue<int>();
+            queue.Enqueue(0);
+            visited[0] = true;
+
+            while (queue.Count > 0) {
+                int vertex = queue.Dequeue();
+
+                for (int i = 0; i < N; i++) {
+                    if (AdjMatrix[vertex, i] == 1 && !visited[i]) {
+                        queue.Enqueue(i);
+                        visited[i] = true;
+                    }
+                }
+            }
+
+            return Array.TrueForAll(visited, v => v == true);
+        }
+
+        // метод для проверки, что каждая вершина имеет четную степень
+        private bool HasEvenDegrees(int[,] matrix) {
+            for (int i = 0; i < N; i++) {
+                if (GetDegree(matrix, i) % 2 == 1) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // метод для нахождения степени вершины
+        private int GetDegree(int[,] matrix, int vertex) {
+            int degree = 0;
+
+            for (int i = 0; i < N; i++) {
+                degree += matrix[vertex, i];
+            }
+
+            return degree;
+        }
+        #endregion
+
         #region Вспомогательные методы
         // Получить массив вершин
         public List<Vertex> GetVertexArr() {
