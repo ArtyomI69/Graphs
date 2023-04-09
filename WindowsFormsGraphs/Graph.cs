@@ -528,7 +528,7 @@ namespace WindowsFormsGraphs {
                 u = next[u, v];
                 if (HaveDrawingMethods) {
                     DrawEdge(vertices[u], vertices[prev], Color.Red);
-                    DrawEdge(vertices[prev], vertices[u], Color.Red);
+                    if (vertices[prev].Neighbours.ContainsValue(vertices[u])) DrawEdge(vertices[prev], vertices[u], Color.Red);
                 }
                 prev = u;
                 path += vertices[u].Name;
@@ -570,6 +570,7 @@ namespace WindowsFormsGraphs {
                 int weight = edge.Weight;
                 if (distance[from] + weight < distance[to]) throw new Exception("В графе присутствуют цикл с негативным значением");
             }
+            distance[start] = 0;
 
             return distance;
         }
@@ -739,33 +740,7 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
-        #region Вспомогательные методы
-        // Получить массив вершин
-        public List<Vertex> GetVertexArr() {
-            List<Vertex> vertices = Vertices.Values.ToList();
-            return vertices;
-        }
-
-        private List<(int edgeVal, string name1, string name2)> _GetEdgesArr() {
-            List<(int edgeVal, string name1, string name2)> res = new List<(int edgeVal, string name1, string name2)>();
-            HashSet<(string name1, string name2)> visited = new HashSet<(string name1, string name2)>();
-            List<Vertex> vertices = GetVertexArr();
-            for (int i = 0; i < N; i++) {
-                for (int j = 0; j < N; j++) {
-                    string name1 = vertices[i].Name;
-                    string name2 = vertices[j].Name;
-                    int edgeVal = AdjMatrix[i, j];
-                    if (edgeVal == 0) continue;
-                    if (visited.Contains((name1, name2))) continue;
-
-                    visited.Add((name2, name1));
-                    res.Add((edgeVal, name1, name2));
-                }
-            }
-            return res;
-        }
-        #endregion
-
+        #region Гамильтонов цикл
         private bool isSafe(int v, int[,] graph, int[] path, int pos) {
             if (graph[path[pos - 1], v] == 0)
                 return false;
@@ -823,5 +798,68 @@ namespace WindowsFormsGraphs {
             DrawEdge(vertices[path[0]], prev, Color.Red);
             return res;
         }
+        #endregion
+
+        #region Вспомогательные методы
+        // Получить массив вершин
+        public List<Vertex> GetVertexArr() {
+            List<Vertex> vertices = Vertices.Values.ToList();
+            return vertices;
+        }
+
+        private List<(int edgeVal, string name1, string name2)> _GetEdgesArr() {
+            List<(int edgeVal, string name1, string name2)> res = new List<(int edgeVal, string name1, string name2)>();
+            HashSet<(string name1, string name2)> visited = new HashSet<(string name1, string name2)>();
+            List<Vertex> vertices = GetVertexArr();
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    string name1 = vertices[i].Name;
+                    string name2 = vertices[j].Name;
+                    int edgeVal = AdjMatrix[i, j];
+                    if (edgeVal == 0) continue;
+                    if (visited.Contains((name1, name2))) continue;
+
+                    visited.Add((name2, name1));
+                    res.Add((edgeVal, name1, name2));
+                }
+            }
+            return res;
+        }
+        #endregion
+
+        #region Алгоритм Флойда-Уоршелла
+        public long[,]  FloydWarshall() {
+            long[,] dist = new long[N, N];
+            int i, j, k;
+
+            long[,] tmpAdjMatrix = new long[N, N];
+            for (i = 0; i < N; i++) {
+                for (j = 0; j < N; j++) {
+                    if (i == j) continue;
+                    tmpAdjMatrix[i, j] = AdjMatrix[i, j] != 0 ? AdjMatrix[i,j] : int.MaxValue;
+                }
+            }
+
+            for (i = 0; i < N; i++) {
+                for (j = 0; j < N; j++) {
+                    dist[i, j] = tmpAdjMatrix[i, j];
+                }
+            }
+
+            for (k = 0; k < N; k++) {
+                for (i = 0; i < N; i++) {
+                    for (j = 0; j < N; j++) {
+                        if (dist[i, k] + dist[k, j]
+                            < dist[i, j]) {
+                            dist[i, j]
+                                = dist[i, k] + dist[k, j];
+                        }
+                    }
+                }
+            }
+
+            return dist;
+        }
+        #endregion
     }
 }

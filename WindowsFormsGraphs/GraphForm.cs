@@ -363,6 +363,10 @@ namespace WindowsFormsGraphs {
                         FindHamiltonianCycle();
                         break;
                     }
+                case "Алгоритм Флойда Уоршела": {
+                        FloydWarshall();
+                        break;
+                    }
                 default: break;
             }
         }
@@ -529,8 +533,8 @@ namespace WindowsFormsGraphs {
                 for (int i = 0; i < N; i++) {
                     res += $"{vertices[i].Name} ";
                     for (int j = 0; j < N; j++) {
-                        if (dist[i, j] != int.MaxValue) res += $"{dist[i, j]} ";
-                        else res += "∞";
+                        if (Math.Abs(dist[i, j]) >= int.MaxValue - 1000) res += "∞"; 
+                        else res += $"{dist[i, j]} ";
                     }
                     res += "\n";
                 }
@@ -614,6 +618,33 @@ namespace WindowsFormsGraphs {
                 textBoxResults.Text = res;
             } catch {
                 textBoxResults.Text = "Не удалось найти гамильтонов цикл.";
+            }
+        }
+
+        private void FloydWarshall() {
+            try {
+                long[,] dist = graph.FloydWarshall();
+                List<Vertex> vertices = graph.GetVertexArr();
+                int N = dist.GetLength(0);
+                if (N == 0) return;
+                string res = "Расстояние от каждой вершины до всех других вершин:\n";
+                res += "   ";
+                for (int i = 0; i < N; i++) {
+                    res += $"{vertices[i].Name} ";
+                }
+                res += "\n";
+
+                for (int i = 0; i < N; i++) {
+                    res += $"{vertices[i].Name} ";
+                    for (int j = 0; j < N; j++) {
+                        if (Math.Abs(dist[i, j]) >= int.MaxValue - 1000) res += "∞";
+                        else res += $"{dist[i, j]} ";
+                    }
+                    res += "\n";
+                }
+                textBoxResults.Text = res;
+            } catch {
+                textBoxResults.Text = "Данной вершины не существует";
             }
         }
         #endregion
@@ -745,7 +776,7 @@ namespace WindowsFormsGraphs {
         private string ArrToString(int[] arr) {
             string res = "";
             string inf = "∞";
-            foreach (int el in arr) res += $"{(el == int.MaxValue ? inf : el.ToString())} ";
+            foreach (int el in arr) res += $"{(Math.Abs(el) >= int.MaxValue - 1000 ? inf : el.ToString())} ";
             return res;
         }
 
