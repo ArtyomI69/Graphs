@@ -11,7 +11,7 @@ using System.Threading;
 namespace WindowsFormsGraphs {
     public delegate void DrawVertexDelegate(Vertex vertex, Color color, int mileSeconds = 0);
     public delegate void DrawVerticesDelegate(Color color);
-    public delegate void DrawEdgeDelegate(Vertex v1, Vertex v2, Color color);
+    public delegate void DrawEdgeDelegate(Vertex v1, Vertex v2, Color color, int mileSeconds = 0);
     public class Graph {
         #region Поля
         // Статические поля
@@ -628,7 +628,7 @@ namespace WindowsFormsGraphs {
         #endregion
 
         #region Эйлеров цикл
-        public List<Vertex> FindEulerCycle() {
+        public List<Vertex> FindEulerCycle(CancellationToken ct) {
             List<Vertex> res = new List<Vertex>();
             List<int> cycle = new List<int>();
 
@@ -681,8 +681,16 @@ namespace WindowsFormsGraphs {
             cycle.Reverse();
 
             List<Vertex> vertices = GetVertexArr();
+            Vertex prev = null;
             foreach (int v in cycle) {
+                if (ct.IsCancellationRequested) throw new OperationCanceledException();
+
                 res.Add(vertices[v]);
+                if (prev != null) {
+                    DrawEdge(prev, vertices[v], Color.Red);
+                    DrawEdge(vertices[v], prev, Color.Red, 1000);
+                }
+                prev = vertices[v];
             }
             return res;
         }
@@ -757,5 +765,63 @@ namespace WindowsFormsGraphs {
             return res;
         }
         #endregion
+
+        private bool isSafe(int v, int[,] graph, int[] path, int pos) {
+            if (graph[path[pos - 1], v] == 0)
+                return false;
+
+            for (int i = 0; i < pos; i++)
+                if (path[i] == v)
+                    return false;
+
+            return true;
+        }
+
+        private bool hamCycleUtil(int[,] graph, int[] path, int pos) {
+            if (pos == N) {
+                if (graph[path[pos - 1], path[0]] == 1)
+                    return true;
+                else
+                    return false;
+            }
+
+            for (int v = 1; v < N; v++) {
+                if (isSafe(v, graph, path, pos)) {
+                    path[pos] = v;
+
+                    if (hamCycleUtil(graph, path, pos + 1))
+                        return true;
+
+                    path[pos] = -1;
+                }
+            }
+
+            return false;
+        }
+
+        public List<Vertex> FindHamiltonianCycle() {
+            int[] path = new int[N];
+            for (int i = 0; i < N; i++)
+                path[i] = -1;
+
+            path[0] = 0;
+            if (hamCycleUtil(AdjMatrix, path, 1) == false) throw new Exception();
+
+            List<Vertex> vertices = GetVertexArr();
+            List<Vertex> res = new List<Vertex>();
+            Vertex prev = null;
+            foreach (int v in path) {
+                res.Add(vertices[v]);
+                if (prev != null) {
+                    DrawEdge(prev, vertices[v], Color.Red);
+                    DrawEdge(vertices[v], prev, Color.Red);
+                }
+                prev = vertices[v];
+            }
+            res.Add(vertices[path[0]]);
+            DrawEdge(prev, vertices[path[0]], Color.Red);
+            DrawEdge(vertices[path[0]], prev, Color.Red);
+            return res;
+        }
     }
 }

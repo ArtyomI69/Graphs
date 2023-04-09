@@ -486,7 +486,8 @@
             "Кратчайший путь",
             "Алгоритм Беллмана-Форда",
             "Компоненты сильной связанности",
-            "Эйлеров цикл"});
+            "Эйлеров цикл",
+            "Гамильтонов цикл"});
             this.comboBoxAlgos.Location = new System.Drawing.Point(3, 83);
             this.comboBoxAlgos.Name = "comboBoxAlgos";
             this.comboBoxAlgos.Size = new System.Drawing.Size(130, 28);

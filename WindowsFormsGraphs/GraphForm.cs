@@ -359,6 +359,10 @@ namespace WindowsFormsGraphs {
                         FindEulerCycle();
                         break;
                     }
+                case "Гамильтонов цикл": {
+                        FindHamiltonianCycle();
+                        break;
+                    }
                 default: break;
             }
         }
@@ -577,17 +581,39 @@ namespace WindowsFormsGraphs {
             }
         }
 
-        private void FindEulerCycle() {
-            try {
-                List<Vertex> eulerCycle = graph.FindEulerCycle();
-                if (eulerCycle.Count == 0) throw new Exception();
-                string res = "";
-                foreach (Vertex vertex in eulerCycle) {
-                    res += $"{vertex.Name} ";
+        private async void FindEulerCycle() {
+            DrawAll();
+            CancellationToken ct = StartAlgorithmProccess();
+            await Task.Run(() => {
+                try {
+                    List<Vertex> eulerCycle = graph.FindEulerCycle(ct);
+                    if (eulerCycle.Count == 0) throw new Exception();
+                    string res = "";
+                    foreach (Vertex vertex in eulerCycle) {
+                        res += $"{vertex.Name} ";
+                    }
+                    textBoxResults.Invoke((MethodInvoker)(() => textBoxResults.Text = res));
+                } catch (OperationCanceledException) {
+                    textBoxResults.Invoke((MethodInvoker)(() => textBoxResults.Text = ""));
+                } catch {
+                    textBoxResults.Invoke((MethodInvoker)(() => textBoxResults.Text = "Эйлеров цикл не найден"));
                 }
+            });
+            FinnishAlgorithmProccess();
+            DrawAll();
+        }
+
+        private void FindHamiltonianCycle() {
+            try {
+                List<Vertex> cycle = graph.FindHamiltonianCycle();
+                string res = "";
+                foreach (Vertex v in cycle) {
+                    res += $"{v.Name} ";
+                }
+                res += "\n";
                 textBoxResults.Text = res;
             } catch {
-                textBoxResults.Text = "Не удалось найти эйлеров цикл.";
+                textBoxResults.Text = "Не удалось найти гамильтонов цикл.";
             }
         }
         #endregion
@@ -621,7 +647,7 @@ namespace WindowsFormsGraphs {
             }
         }
 
-        private void DrawEdge(Vertex v1, Vertex v2, Color color) {
+        private void DrawEdge(Vertex v1, Vertex v2, Color color, int millisecond = 0) {
             Pen penEdge = new Pen(color);
             AdjustableArrowCap arrow = new AdjustableArrowCap(10, 10);
             Font font = new Font(FontFamily.GenericSansSerif, 9, FontStyle.Regular);
@@ -657,7 +683,8 @@ namespace WindowsFormsGraphs {
             float arrowCenterX = (vertex1Center.X + vertex2Center.X) / 2;
             float arrowCenterY = (vertex1Center.Y + vertex2Center.Y) / 2;
             g.DrawString(edgeWeight, font, new SolidBrush(Color.Black), arrowCenterX, arrowCenterY);
-            pictureBox.Refresh();
+            pictureBox.Invoke((MethodInvoker)(() => pictureBox.Refresh()));
+            Thread.Sleep(millisecond);
         }
 
         private void DrawEdges() {

@@ -70,7 +70,7 @@ namespace WindowsFormsGraphs {
             }
         }
 
-        private void DrawEdge(Vertex v1, Vertex v2, Color color) {
+        private void DrawEdge(Vertex v1, Vertex v2, Color color, int mileSeconds = 0) {
             Pen penEdge = new Pen(Color.Gray);
             AdjustableArrowCap arrow = new AdjustableArrowCap(10, 10);
             Font font = new Font(FontFamily.GenericSansSerif, 9, FontStyle.Regular);
@@ -105,6 +105,7 @@ namespace WindowsFormsGraphs {
             float arrowCenterX = (vertex1Center.X + vertex2Center.X) / 2;
             float arrowCenterY = (vertex1Center.Y + vertex2Center.Y) / 2;
             g.DrawString(edgeWeight, font, new SolidBrush(color), arrowCenterX, arrowCenterY);
+            Thread.Sleep(mileSeconds);
 
         }
 
