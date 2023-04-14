@@ -356,11 +356,23 @@ namespace WindowsFormsGraphs {
                         break;
                     }
                 case "Эйлеров цикл": {
-                        FindEulerCycle();
+                        EulerCycle();
+                        break;
+                    }
+                case "Эйлеров цикл алгоритм Флёри": {
+                        EulerCycleFluery();
                         break;
                     }
                 case "Гамильтонов цикл": {
                         FindHamiltonianCycle();
+                        break;
+                    }
+                case "Гамильтоновы циклы алгебический метод": {
+                        HamiltonAlgebra();
+                        break;
+                    }
+                case "Гамильтонов цикл метод Робертса-Флореса": {
+                        HamiltonRobertsFlores();
                         break;
                     }
                 case "Алгоритм Флойда Уоршела": {
@@ -533,7 +545,7 @@ namespace WindowsFormsGraphs {
                 for (int i = 0; i < N; i++) {
                     res += $"{vertices[i].Name} ";
                     for (int j = 0; j < N; j++) {
-                        if (Math.Abs(dist[i, j]) >= int.MaxValue - 1000) res += "∞"; 
+                        if (Math.Abs(dist[i, j]) >= int.MaxValue - 1000) res += "∞";
                         else res += $"{dist[i, j]} ";
                     }
                     res += "\n";
@@ -585,12 +597,34 @@ namespace WindowsFormsGraphs {
             }
         }
 
-        private async void FindEulerCycle() {
+        private async void EulerCycle() {
             DrawAll();
             CancellationToken ct = StartAlgorithmProccess();
             await Task.Run(() => {
                 try {
                     List<Vertex> eulerCycle = graph.FindEulerCycle(ct);
+                    if (eulerCycle.Count == 0) throw new Exception();
+                    string res = "";
+                    foreach (Vertex vertex in eulerCycle) {
+                        res += $"{vertex.Name} ";
+                    }
+                    textBoxResults.Invoke((MethodInvoker)(() => textBoxResults.Text = res));
+                } catch (OperationCanceledException) {
+                    textBoxResults.Invoke((MethodInvoker)(() => textBoxResults.Text = ""));
+                } catch {
+                    textBoxResults.Invoke((MethodInvoker)(() => textBoxResults.Text = "Эйлеров цикл не найден"));
+                }
+            });
+            FinnishAlgorithmProccess();
+            DrawAll();
+        }
+
+        private async void EulerCycleFluery() {
+            DrawAll();
+            CancellationToken ct = StartAlgorithmProccess();
+            await Task.Run(() => {
+                try {
+                    List<Vertex> eulerCycle = graph.EulerCycleFleury(ct);
                     if (eulerCycle.Count == 0) throw new Exception();
                     string res = "";
                     foreach (Vertex vertex in eulerCycle) {
@@ -613,6 +647,36 @@ namespace WindowsFormsGraphs {
                 string res = "";
                 foreach (Vertex v in cycle) {
                     res += $"{v.Name} ";
+                }
+                res += "\n";
+                textBoxResults.Text = res;
+        } catch {
+                textBoxResults.Text = "Не удалось найти гамильтонов цикл.";
+            }
+}
+
+        private void HamiltonAlgebra() {
+            try {
+                List<Vertex> vertices = graph.GetVertexArr();
+                string[] cycles = graph.HamiltonAlgebra();
+                int N = cycles.GetLength(0);
+                string res = "";
+                for (int i = 0; i < N; i++) {
+                    res += $"{cycles[i]}\n";
+                }
+                textBoxResults.Text = res;
+            } catch {
+                textBoxResults.Text = "Не удалось найти гамильтонов цикл.";
+            }
+        }
+
+        private void HamiltonRobertsFlores() {
+            try {
+                string from = textBoxFrom.Text;
+                List<string> cycles = graph.HamiltonRobertsFlores(from);
+                string res = "";
+                foreach (string v in cycles) {
+                    res += $"{v}\n";
                 }
                 res += "\n";
                 textBoxResults.Text = res;

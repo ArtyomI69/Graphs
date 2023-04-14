@@ -7,6 +7,7 @@ using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
+using System.Text.RegularExpressions;
 
 namespace WindowsFormsGraphs {
     public delegate void DrawVertexDelegate(Vertex vertex, Color color, int mileSeconds = 0);
@@ -576,7 +577,7 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
-        #region Компоненты сильной 
+        #region Компоненты сильной связанности
         public List<List<Vertex>> SCC() {
             Stack<Vertex> stack = new Stack<Vertex>();
             HashSet<Vertex> visited = new HashSet<Vertex>();
@@ -630,6 +631,40 @@ namespace WindowsFormsGraphs {
 
         #region Эйлеров цикл
         public List<Vertex> FindEulerCycle(CancellationToken ct) {
+            int[,] adjMatrix = new int[N, N];
+            Array.Copy(AdjMatrix, adjMatrix, N * N);
+            List<Vertex> res = new List<Vertex>();
+            EulerCycle(0, adjMatrix, res);
+            Vertex prev = null;
+
+            foreach (Vertex v in res) {
+                if (ct.IsCancellationRequested) throw new OperationCanceledException();
+
+                if (prev != null) {
+                    DrawEdge(prev, v, Color.Red);
+                    DrawEdge(v, prev, Color.Red, 1000);
+                }
+                prev = v;
+            }
+
+            return res;
+        }
+
+        private void EulerCycle(int v, int[,] adjMatrix, List<Vertex> res) {
+            List<Vertex> vertices = GetVertexArr();
+            for (int j = 0; j < N; j++) {
+                if (adjMatrix[v, j] != 0) {
+                    adjMatrix[v, j] = 0;
+                    adjMatrix[j, v] = 0;
+                    EulerCycle(j, adjMatrix, res);
+                }
+            }
+            res.Add(vertices[v]);
+        }
+        #endregion
+
+        #region Эйлеров цикл алгоритм Флёри
+        public List<Vertex> EulerCycleFleury(CancellationToken ct) {
             List<Vertex> res = new List<Vertex>();
             List<int> cycle = new List<int>();
 
@@ -681,6 +716,7 @@ namespace WindowsFormsGraphs {
             // переворачиваем цикл и возвращаем его
             cycle.Reverse();
 
+            // рисуем цикл в интерфейсе
             List<Vertex> vertices = GetVertexArr();
             Vertex prev = null;
             foreach (int v in cycle) {
@@ -740,50 +776,16 @@ namespace WindowsFormsGraphs {
         }
         #endregion
 
-        #region Гамильтонов цикл
-        private bool isSafe(int v, int[,] graph, int[] path, int pos) {
-            if (graph[path[pos - 1], v] == 0)
-                return false;
-
-            for (int i = 0; i < pos; i++)
-                if (path[i] == v)
-                    return false;
-
-            return true;
-        }
-
-        private bool hamCycleUtil(int[,] graph, int[] path, int pos) {
-            if (pos == N) {
-                if (graph[path[pos - 1], path[0]] == 1)
-                    return true;
-                else
-                    return false;
-            }
-
-            for (int v = 1; v < N; v++) {
-                if (isSafe(v, graph, path, pos)) {
-                    path[pos] = v;
-
-                    if (hamCycleUtil(graph, path, pos + 1))
-                        return true;
-
-                    path[pos] = -1;
-                }
-            }
-
-            return false;
-        }
-
+        #region Гамильонов цикл
         public List<Vertex> FindHamiltonianCycle() {
-            int[] path = new int[N];
-            for (int i = 0; i < N; i++)
-                path[i] = -1;
-
+            List<Vertex> res = new List<Vertex>();
+            int[] path = new int[N + 1];
             path[0] = 0;
-            if (hamCycleUtil(AdjMatrix, path, 1) == false) throw new Exception();
+            bool[] visited = new bool[N];
+            visited[0] = true;
+            HamiltonCycle(1, path, visited);
 
             List<Vertex> vertices = GetVertexArr();
-            List<Vertex> res = new List<Vertex>();
             Vertex prev = null;
             foreach (int v in path) {
                 res.Add(vertices[v]);
@@ -793,10 +795,202 @@ namespace WindowsFormsGraphs {
                 }
                 prev = vertices[v];
             }
-            res.Add(vertices[path[0]]);
-            DrawEdge(prev, vertices[path[0]], Color.Red);
-            DrawEdge(vertices[path[0]], prev, Color.Red);
             return res;
+        }
+
+        private void HamiltonCycle(int k, int[] path, bool[] visited) {
+            int v = path[k - 1];
+            for (int j = 0; j < N; j++) {
+                if (AdjMatrix[v, j] != 0) {
+                    if (k == N + 1 && j == 0) return;
+                    else {
+                        if (!visited[j]) {
+                            path[k] = j;
+                            visited[j] = true;
+                            HamiltonCycle(k + 1, path, visited);
+                            visited[j] = false;
+                        }
+                    }
+                }
+            }
+        }
+        #endregion
+
+        #region Гамильтонов цикл алгебраическим методом
+        public string[] HamiltonAlgebra() {
+            string[,] p = new string[N, N];
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    p[i, j] = AdjMatrix[i, j].ToString();
+                }
+            }
+
+            for (int i = 0; i < N - 2; i++) {
+                p = HamiltonMultiplication(p);
+                p = HamiltonAlgebraUtil(p);
+            }
+            p = HamiltonMultiplication(p);
+
+            List<Vertex> vertices = GetVertexArr();
+            string[] res = new string[N];
+            for (int i = 0; i < N; i++) {
+                foreach (string el in p[i, i].Trim().Split(' ')) {
+                    if (el.Length == N - 1) res[i] += $"{vertices[i].Name}{el}{vertices[i].Name} ";
+                }
+            }
+            return res;
+        }
+
+        private string[,] HamiltonMultiplication(string[,] p) {
+            List<Vertex> vertices = GetVertexArr();
+            string[,] res = new string[N, N];
+
+            string[,] B = new string[N, N];
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    if (AdjMatrix[i, j] == 0) B[i, j] = "0";
+                    else B[i, j] = vertices[j].Name;
+                }
+            }
+
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    for (int k = 0; k < N; k++) {
+                        if (B[i, k] != "0" && p[k, j] != "0")
+                            if (p[k, j] != null && p[k, j].Trim() != "0") {
+                                if (p[k, j] == "1") res[i, j] += $"{B[i, k]} ";
+                                else {
+                                    string tmp = "";
+                                    foreach (string el in p[k, j].Trim().Split(' ')) {
+                                        tmp += $"{B[i, k]}{el} ";
+                                    }
+                                    res[i, j] += $"{tmp} ";
+                                }
+                            } else {
+                                if (p[k, j] == "1") res[i, j] = $"{B[i, k]} ";
+                                else {
+                                    string tmp = "";
+                                    foreach (string el in p[k, j].Trim().Split(' ')) {
+                                        tmp += $"{B[i, k]}{el} ";
+                                    }
+                                    res[i, j] = $"{tmp} ";
+                                }
+                            }
+                    }
+                    if (res[i, j] != null) res[i, j] = Regex.Replace(res[i, j], @"\s+", " ");
+                }
+            }
+
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    if (res[i, j] == null) res[i, j] = "0";
+                }
+            }
+
+            return res;
+        }
+
+        private string[,] HamiltonAlgebraUtil(string[,] p) {
+            List<Vertex> vertices = GetVertexArr();
+            string[,] res = new string[N, N];
+            Array.Copy(p, res, N * N);
+
+            for (int i = 0; i < N; i++) {
+                for (int j = 0; j < N; j++) {
+                    string tmp = "";
+                    foreach (string el in p[i, j].Trim().Split(' ')) {
+                        string newEl = el;
+                        if (el.Contains(vertices[i].Name) || el.Contains(vertices[j].Name) || el.Contains("0")) newEl = "";
+                        tmp += $"{newEl} ";
+                    }
+                    res[i, j] = tmp;
+                    if (res[i, j].Trim().Length == 0) res[i, j] = "0";
+                }
+            }
+            return res;
+        }
+        #endregion
+
+        #region Гамильтон Робертс-Флорес
+        public List<string> HamiltonRobertsFlores(string from) {
+            List<string> res = new List<string>();
+
+            List<Vertex> vertices = GetVertexArr();
+            string[,] matrix = new string[N, N];
+            for (int i = 0; i < N; i++) {
+                int k = 0;
+                for (int j = 0; j < N; j++) {
+                    matrix[i, j] = "0";
+                    if (Math.Abs(AdjMatrix[i, j]) != 0) {
+                        matrix[i, k] = vertices[j].Name;
+                        k++;
+                    }
+                }
+            }
+
+            int idx = vertices.FindIndex(v => v.Name == from);
+            List<string> path = new List<string>() { vertices[idx].Name };
+            int node = path.Count;
+            Dictionary<string, int> depth = vertices.ToDictionary(x => x.Name, x => 0);
+
+            while (node > 0) {
+                string vertex = path.Last();
+                string nextNode = "0";
+                if (depth[vertex] < N) {
+                    nextNode = matrix[vertices.FindIndex(v => v.Name == vertex), depth[vertex]];
+                    depth[vertex]++;
+                }
+                if (nextNode != "0" && !path.Contains(nextNode)) {
+                    path.Add(nextNode);
+                    node++;
+                    depth[nextNode] = 0;
+                    continue;
+                } else if (path.Contains(nextNode)) {
+                    continue;
+                } else {
+                    if (path.Count == N) {
+                        res.Add(String.Join("", path));
+                    }
+                    path.RemoveAt(path.Count - 1);
+                    node--;
+                }
+            }
+            return res;
+        }
+        #endregion
+
+        #region Алгоритм Флойда-Уоршелла
+        public long[,] FloydWarshall() {
+            long[,] dist = new long[N, N];
+            int i, j, k;
+
+            long[,] tmpAdjMatrix = new long[N, N];
+            for (i = 0; i < N; i++) {
+                for (j = 0; j < N; j++) {
+                    if (i == j) continue;
+                    tmpAdjMatrix[i, j] = AdjMatrix[i, j] != 0 ? AdjMatrix[i, j] : int.MaxValue;
+                }
+            }
+
+            for (i = 0; i < N; i++) {
+                for (j = 0; j < N; j++) {
+                    dist[i, j] = tmpAdjMatrix[i, j];
+                }
+            }
+
+            for (k = 0; k < N; k++) {
+                for (i = 0; i < N; i++) {
+                    for (j = 0; j < N; j++) {
+                        if (dist[i, k] + dist[k, j]
+                            < dist[i, j]) {
+                            dist[i, j]
+                                = dist[i, k] + dist[k, j];
+                        }
+                    }
+                }
+            }
+
+            return dist;
         }
         #endregion
 
@@ -824,41 +1018,6 @@ namespace WindowsFormsGraphs {
                 }
             }
             return res;
-        }
-        #endregion
-
-        #region Алгоритм Флойда-Уоршелла
-        public long[,]  FloydWarshall() {
-            long[,] dist = new long[N, N];
-            int i, j, k;
-
-            long[,] tmpAdjMatrix = new long[N, N];
-            for (i = 0; i < N; i++) {
-                for (j = 0; j < N; j++) {
-                    if (i == j) continue;
-                    tmpAdjMatrix[i, j] = AdjMatrix[i, j] != 0 ? AdjMatrix[i,j] : int.MaxValue;
-                }
-            }
-
-            for (i = 0; i < N; i++) {
-                for (j = 0; j < N; j++) {
-                    dist[i, j] = tmpAdjMatrix[i, j];
-                }
-            }
-
-            for (k = 0; k < N; k++) {
-                for (i = 0; i < N; i++) {
-                    for (j = 0; j < N; j++) {
-                        if (dist[i, k] + dist[k, j]
-                            < dist[i, j]) {
-                            dist[i, j]
-                                = dist[i, k] + dist[k, j];
-                        }
-                    }
-                }
-            }
-
-            return dist;
         }
         #endregion
     }
